@@ -23,14 +23,30 @@ class Reg_Model(object):
         self.model_type = None
         self.mse = None
         self.input_cols = None
+        self.inter = None
 
 #Sets training dataset for the model to be built on
-    def set_training(self, x, y):
+    def set_training(self, x, y, inter = None):
         self.tx = x
         self.ty = y
-        self.input_cols = set(x.columns.values)
+
+        self.input_cols = set(self.tx.columns.values)
+
+        self.inter = inter
+        self.tx = self.add_interactions(self.tx, self.inter)
         #self.cap_and_floor()
 
+#Interaction effect
+    def add_interactions(self, x, inter):
+        if inter is None:
+            return x
+        else:
+            for combo in inter:
+                var1 = combo[0]
+                var2 = combo[1]
+                combo_col = var1 + var2
+                x[combo_col] = x[var1] * x[var2]
+            return x
 #Sets pipeline
     def set_pipeline(self, steps, params):
         self.steps = steps
@@ -54,6 +70,7 @@ class Reg_Model(object):
         if self.best_model == None:
             return None
         else:
+            test_x = self.add_interactions(test_x, self.inter)
             return self.best_model.predict(test_x)
 
     #Returns MSE of best model
